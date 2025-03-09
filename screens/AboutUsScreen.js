@@ -9,8 +9,8 @@ export default function AboutUsScreen({ navigation }) {
       name: "Shiv Davay",
       role: "CEO & Security Architect",
       bio: "Security expert with a passion for building intuitive, secure systems that protect user data without compromising on experience.",
-      image: "https://randomuser.me/api/portraits/men/32.jpg", // Placeholder - replace with actual image
-      linkedin: "https://linkedin.com/in/",
+      image: "https://media.licdn.com/dms/image/v2/D4E03AQHhB9Bhs1K-ag/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1728959089424?e=1747267200&v=beta&t=jOWL3oDXTIOfdixCGOQytTF8LrsDHJyN6hMs7BuyM0Y", // Placeholder - replace with actual image
+      linkedin: "https://www.linkedin.com/in/shiv-davay-80a505287/",
       github: "https://github.com/",
     },
     {
@@ -18,7 +18,7 @@ export default function AboutUsScreen({ navigation }) {
       name: "Parthiv Maddipatla",
       role: "CTO & Backend Developer",
       bio: "Specializes in secure infrastructure and backend development with expertise in blockchain technologies and API integrations.",
-      image: "https://randomuser.me/api/portraits/men/41.jpg", // Placeholder - replace with actual image
+      image: "https://mail.google.com/mail/u/0?ui=2&ik=28d05d10a8&attid=0.1&permmsgid=msg-f:1826107020363239343&th=1957a2a8ee990faf&view=fimg&fur=ip&permmsgid=msg-f:1826107020363239343&sz=s0-l75-ft&attbid=ANGjdJ9TQvdT785HJVuyqm-ov9_EAI3t6Qthn1V8Tl2K-g7bHaMBCvSf_Tti868M6lXKTjLH2kaIXXtcgtb61_tlE6tY-VuG5ELsELvvfYxaSDDzdIiff-gHfNjguwM&disp=emb&realattid=ii_1957a2a5198baf686ec1&zw", // Placeholder - replace with actual image
       linkedin: "https://linkedin.com/in/",
       github: "https://github.com/",
     },
@@ -27,7 +27,7 @@ export default function AboutUsScreen({ navigation }) {
       name: "Svaran Medavarapu",
       role: "Lead Frontend Developer",
       bio: "UI/UX specialist focusing on creating intuitive interfaces that make complex security concepts accessible to everyone.",
-      image: "https://randomuser.me/api/portraits/men/55.jpg", // Placeholder - replace with actual image
+      image: "https://mail.google.com/mail/u/0?ui=2&ik=28d05d10a8&attid=0.1&permmsgid=msg-f:1826107107549011616&th=1957a2bd3b465ea0&view=fimg&fur=ip&permmsgid=msg-f:1826107107549011616&sz=s0-l75-ft&attbid=ANGjdJ81sRE3TNS_D10f7OJmhZmSS_qQi3LcNafwhLV15bcBPSZzibv-fwOh1AF2yZAQgsNtpxX5jlD_xTtH1OA0tQ2JG6p4k8xlGQZLEcJwJ4nMGsTT1ah42X-RwG4&disp=emb&realattid=ii_1957a2b936e94d74be41&zw", // Placeholder - replace with actual image
       linkedin: "https://linkedin.com/in/",
       github: "https://github.com/",
     },
@@ -36,8 +36,8 @@ export default function AboutUsScreen({ navigation }) {
       name: "Aahan Sachdeva",
       role: "AI & ML Specialist",
       bio: "Developing cutting-edge AI models to enhance security threat detection and provide intelligent responses to emerging threats.",
-      image: "https://randomuser.me/api/portraits/men/67.jpg", // Placeholder - replace with actual image
-      linkedin: "https://linkedin.com/in/",
+      image: "https://media.licdn.com/dms/image/v2/D4E03AQF8OjQb3IKsfw/profile-displayphoto-shrink_800_800/B4EZQAQSObHAAg-/0/1735171057715?e=1747267200&v=beta&t=jUdTG_OyTKRTc9JyiGOXphkpOkCZLviMAc01ojUIF9E", // Placeholder - replace with actual image
+      linkedin: "https://www.linkedin.com/in/aahan-s/",
       github: "https://github.com/",
     },
   ]

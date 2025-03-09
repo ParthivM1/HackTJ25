@@ -14,8 +14,11 @@ import {
   Keyboard,
   Animated,
   Easing,
+  ActivityIndicator,
+  Alert,
 } from "react-native"
 import { StatusBar } from "expo-status-bar"
+import { generateResponse, clearConversationHistory } from "../services/gemini-api"
 
 export default function ChatbotScreen({ navigation }) {
   const [messages, setMessages] = useState([
@@ -29,28 +32,8 @@ export default function ChatbotScreen({ navigation }) {
 
   const [inputText, setInputText] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const [selectedPersonality, setSelectedPersonality] = useState("assistant")
   const scrollViewRef = useRef(null)
   const typingDots = useRef(new Animated.Value(0)).current
-
-  // Personalities for the chatbot
-  const personalities = {
-    assistant: {
-      name: "Security Assistant",
-      description: "Helpful and informative about security topics",
-      color: "#4A90E2",
-    },
-    expert: {
-      name: "Security Expert",
-      description: "Technical and detailed security analysis",
-      color: "#43A047",
-    },
-    friendly: {
-      name: "Friendly Guide",
-      description: "Simple explanations with a friendly tone",
-      color: "#FFA000",
-    },
-  }
 
   // Animate the typing indicator
   useEffect(() => {
@@ -92,7 +75,7 @@ export default function ChatbotScreen({ navigation }) {
   }
 
   // Send a message
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (inputText.trim() === "") return
 
     // Add user message
@@ -107,75 +90,39 @@ export default function ChatbotScreen({ navigation }) {
     setInputText("")
     setIsTyping(true)
 
-    // Simulate bot thinking and responding
-    simulateBotResponse(inputText.trim())
-  }
-
-  // Simulate bot response (replace with actual LLM integration later)
-  const simulateBotResponse = (userInput) => {
-    // Simulate thinking time (1-3 seconds)
-    const thinkingTime = Math.floor(Math.random() * 2000) + 1000
-
-    setTimeout(() => {
-      let botResponse
-
-      // Simple response logic based on user input keywords
-      if (userInput.toLowerCase().includes("hello") || userInput.toLowerCase().includes("hi")) {
-        botResponse = "Hello! How can I assist you with your security needs today?"
-      } else if (userInput.toLowerCase().includes("security") && userInput.toLowerCase().includes("password")) {
-        botResponse =
-          "Strong passwords are essential for security. Use a mix of letters, numbers, and symbols, and avoid using the same password across multiple sites. Consider using a password manager to keep track of them securely."
-      } else if (userInput.toLowerCase().includes("breach") || userInput.toLowerCase().includes("hack")) {
-        botResponse =
-          "If you suspect a security breach, you should immediately change your passwords, enable two-factor authentication where possible, and monitor your accounts for suspicious activity. Would you like me to guide you through specific steps?"
-      } else if (userInput.toLowerCase().includes("vpn")) {
-        botResponse =
-          "A VPN (Virtual Private Network) encrypts your internet connection, making it more secure, especially on public Wi-Fi. It can help protect your data from being intercepted by malicious actors."
-      } else if (userInput.toLowerCase().includes("phishing")) {
-        botResponse =
-          "Phishing attacks try to trick you into revealing sensitive information. Be wary of unexpected emails asking for personal information, check URLs carefully before clicking, and don't download attachments from unknown sources."
-      } else {
-        // Default responses based on personality
-        const defaultResponses = {
-          assistant: [
-            "I understand your concern about security. Could you provide more details so I can assist you better?",
-            "That's an interesting question. From a security perspective, I'd recommend considering these factors...",
-            "I'm here to help with your security needs. Let me know if you need more specific information.",
-          ],
-          expert: [
-            "From a technical security standpoint, this requires a multi-layered approach. Let me elaborate...",
-            "Your security posture should account for both technical and human factors. Consider implementing...",
-            "This is a common security challenge. The most effective mitigation strategy involves...",
-          ],
-          friendly: [
-            "I get what you're asking! Here's a simple way to think about securing your digital life...",
-            "Great question! Think of your online security like locking your house - you need good locks (passwords) and awareness of who's at the door (suspicious emails).",
-            "Let me break this down in a simple way. Imagine your data is like your personal belongings...",
-          ],
-        }
-
-        // Select a random response from the appropriate personality
-        const responses = defaultResponses[selectedPersonality]
-        const randomIndex = Math.floor(Math.random() * responses.length)
-        botResponse = responses[randomIndex]
-      }
+    try {
+      // Get response from Gemini API
+      const response = await generateResponse(inputText.trim())
 
       // Add bot message
       const botMessage = {
         id: `bot-${Date.now()}`,
-        text: botResponse,
+        text: response,
         sender: "bot",
         timestamp: new Date().toISOString(),
-        personality: selectedPersonality,
       }
 
-      setIsTyping(false)
       setMessages((prev) => [...prev, botMessage])
-    }, thinkingTime)
+    } catch (error) {
+      console.error("Error getting response:", error)
+
+      // Add error message
+      const errorMessage = {
+        id: `error-${Date.now()}`,
+        text: "Sorry, I encountered an error. Please try again.",
+        sender: "bot",
+        timestamp: new Date().toISOString(),
+      }
+
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   // Clear chat history
   const clearChat = () => {
+    // Clear local message state
     setMessages([
       {
         id: "welcome-new",
@@ -184,22 +131,18 @@ export default function ChatbotScreen({ navigation }) {
         timestamp: new Date().toISOString(),
       },
     ])
+
+    // Clear conversation history in the API service
+    clearConversationHistory()
   }
 
-  // Change bot personality
-  const changePersonality = (personality) => {
-    setSelectedPersonality(personality)
-
-    // Add a message about the personality change
-    const systemMessage = {
-      id: `system-${Date.now()}`,
-      text: `Chatbot personality changed to ${personalities[personality].name}`,
-      sender: "system",
-      timestamp: new Date().toISOString(),
-    }
-
-    setMessages((prev) => [...prev, systemMessage])
-  }
+  // Render each message in the list
+  const renderAlertItem = ({ item }) => (
+    <View style={styles.alertItem}>
+      <Text style={styles.alertMessage}>{item.message}</Text>
+      <Text style={styles.alertTimestamp}>{item.timestamp}</Text>
+    </View>
+  )
 
   return (
     <SafeAreaView style={styles.container}>
@@ -210,7 +153,7 @@ export default function ChatbotScreen({ navigation }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <View style={styles.header}>
-          <Text style={styles.appName}>MyApp</Text>
+          <Text style={styles.appName}>CyberGuard</Text>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>Back to Dashboard</Text>
           </TouchableOpacity>
@@ -218,30 +161,7 @@ export default function ChatbotScreen({ navigation }) {
 
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Security Assistant</Text>
-          <Text style={styles.subtitle}>Chat with our AI to get security advice and assistance</Text>
-        </View>
-
-        {/* Personality selector */}
-        <View style={styles.personalitySelector}>
-          {Object.keys(personalities).map((key) => (
-            <TouchableOpacity
-              key={key}
-              style={[
-                styles.personalityOption,
-                selectedPersonality === key && {
-                  backgroundColor: personalities[key].color + "20",
-                  borderColor: personalities[key].color,
-                },
-              ]}
-              onPress={() => changePersonality(key)}
-            >
-              <Text
-                style={[styles.personalityName, selectedPersonality === key && { color: personalities[key].color }]}
-              >
-                {personalities[key].name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.subtitle}>Chat with our AI powered assistant to get security advice and assistance</Text>
         </View>
 
         {/* Chat messages */}
@@ -255,12 +175,7 @@ export default function ChatbotScreen({ navigation }) {
                   ? styles.userMessage
                   : message.sender === "system"
                     ? styles.systemMessage
-                    : [
-                        styles.botMessage,
-                        message.personality && {
-                          borderLeftColor: personalities[message.personality || "assistant"].color,
-                        },
-                      ],
+                    : styles.botMessage,
               ]}
             >
               <Text style={[styles.messageText, message.sender === "system" && styles.systemMessageText]}>
@@ -297,9 +212,13 @@ export default function ChatbotScreen({ navigation }) {
           <TouchableOpacity
             style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
             onPress={sendMessage}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || isTyping}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            {isTyping ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.sendButtonText}>Send</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -312,8 +231,7 @@ export default function ChatbotScreen({ navigation }) {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => {
-              // This would be replaced with actual functionality to save the chat
-              alert("Chat history saved!")
+              Alert.alert("Chat Saved", "Chat history has been saved successfully!")
             }}
           >
             <Text style={styles.actionButtonText}>Save Chat</Text>
@@ -322,7 +240,7 @@ export default function ChatbotScreen({ navigation }) {
 
         {/* Integration info */}
         <View style={styles.integrationInfo}>
-          <Text style={styles.integrationInfoText}>Ready to connect with your custom LLM backend.</Text>
+          <Text style={styles.integrationInfoText}>Powered by Google Gemini AI</Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -332,7 +250,7 @@ export default function ChatbotScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#121826",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -347,13 +265,16 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
+    color: "#fff",
   },
   backButton: {
-    padding: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   backButtonText: {
-    color: "#4A90E2",
+    color: "#fff",
     fontSize: 16,
   },
   titleContainer: {
@@ -363,31 +284,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
+    color: "#fff",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: "rgba(255, 255, 255, 0.7)",
     lineHeight: 22,
-  },
-  personalitySelector: {
-    flexDirection: "row",
-    paddingHorizontal: 15,
-    marginBottom: 15,
-  },
-  personalityOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  personalityName: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
   },
   messagesContainer: {
     flex: 1,
@@ -405,19 +308,19 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#5E72E4",
     borderBottomRightRadius: 4,
   },
   botMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderBottomLeftRadius: 4,
     borderLeftWidth: 3,
-    borderLeftColor: "#4A90E2",
+    borderLeftColor: "#FFA000",
   },
   systemMessage: {
     alignSelf: "center",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -429,13 +332,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   systemMessageText: {
-    color: "#666",
+    color: "rgba(255, 255, 255, 0.7)",
     fontSize: 14,
     fontStyle: "italic",
   },
   messageTime: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.5)",
     alignSelf: "flex-end",
     marginTop: 5,
   },
@@ -448,7 +351,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -456,41 +359,42 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: 14,
-    color: "#666",
+    color: "rgba(255, 255, 255, 0.7)",
     marginRight: 5,
   },
   typingDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#666",
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
   },
   inputContainer: {
     flexDirection: "row",
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#fff",
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "#121826",
   },
   input: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 10,
     fontSize: 16,
     maxHeight: 100,
+    color: "#fff",
   },
   sendButton: {
     marginLeft: 10,
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#5E72E4",
     borderRadius: 20,
     paddingHorizontal: 15,
     justifyContent: "center",
   },
   sendButtonDisabled: {
-    backgroundColor: "#B0C4DE",
+    backgroundColor: "rgba(94, 114, 228, 0.5)",
   },
   sendButtonText: {
     color: "#fff",
@@ -502,14 +406,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   actionButton: {
     paddingVertical: 8,
     paddingHorizontal: 15,
   },
   actionButtonText: {
-    color: "#4A90E2",
+    color: "#5E72E4",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -519,7 +423,7 @@ const styles = StyleSheet.create({
   },
   integrationInfoText: {
     fontSize: 12,
-    color: "#999",
+    color: "rgba(255, 255, 255, 0.5)",
     fontStyle: "italic",
   },
 })

@@ -1,121 +1,286 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
-  Animated,
-  Easing,
+  FlatList,
+  Modal,
+  ActivityIndicator,
   ImageBackground,
 } from "react-native"
 import { StatusBar } from "expo-status-bar"
+import axios from "axios"
+
+// Server URL for the Smart Home Guardian API
+const SERVER_URL = "http://10.180.1.20:3000"
 
 export default function SmartHomeSecurityScreen({ navigation }) {
-  const [isScanning, setIsScanning] = useState(false)
-  const [scanProgress, setScanProgress] = useState(0)
-  const [scanResults, setScanResults] = useState(null)
-  const [animatedValue] = useState(new Animated.Value(0))
+  // State variables
+  const [devices, setDevices] = useState([])
+  const [alerts, setAlerts] = useState([])
+  const [scanning, setScanning] = useState(false)
+  const [error, setError] = useState(null)
+  const [selectedDevice, setSelectedDevice] = useState(null)
 
-  // Simulate a network scan
-  const startScan = () => {
-    setIsScanning(true)
-    setScanProgress(0)
-    setScanResults(null)
+  // Load devices on component mount
+  useEffect(() => {
+    fetchDevices()
 
-    // Reset animation value
-    animatedValue.setValue(0)
+    // Add an initial alert
+    setAlerts([
+      {
+        message: "Smart Home Guardian activated",
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ])
+  }, [])
 
-    // Start the progress animation
-    Animated.timing(animatedValue, {
-      toValue: 100,
-      duration: 8000,
-      easing: Easing.linear,
-      useNativeDriver: false,
-    }).start()
+  // Fetch the list of devices from the server
+  const fetchDevices = async () => {
+    try {
+      const response = await axios.get(`${SERVER_URL}/devices`)
+      setDevices(response.data)
 
-    // Update progress state for UI
-    const progressInterval = setInterval(() => {
-      setScanProgress((prev) => {
-        const newProgress = prev + 100 / 80 // 80 steps to reach 100%
-        return newProgress > 100 ? 100 : newProgress
-      })
-    }, 100)
-
-    // Simulate scan completion after 8 seconds
-    setTimeout(() => {
-      clearInterval(progressInterval)
-      setIsScanning(false)
-      setScanProgress(100)
-
-      // Generate simulated scan results
-      const simulatedResults = {
-        devicesFound: Math.floor(Math.random() * 10) + 5, // 5-15 devices
-        vulnerabilities: [
-          {
-            deviceName: "Smart TV",
-            deviceType: "Entertainment",
-            riskLevel: "Medium",
-            issues: ["Outdated firmware", "Default password not changed"],
-            recommendations: ["Update firmware to latest version", "Change default password"],
-          },
-          {
-            deviceName: "Smart Speaker",
-            deviceType: "Voice Assistant",
-            riskLevel: "Low",
-            issues: ["Open microphone permissions"],
-            recommendations: ["Review privacy settings", "Disable always-on listening"],
-          },
-          {
-            deviceName: "Wi-Fi Router",
-            deviceType: "Network",
-            riskLevel: "High",
-            issues: ["WEP encryption", "Remote management enabled", "Default admin credentials"],
-            recommendations: ["Switch to WPA3 encryption", "Disable remote management", "Change admin credentials"],
-          },
-          {
-            deviceName: "Smart Thermostat",
-            deviceType: "Climate Control",
-            riskLevel: "Low",
-            issues: ["Insecure API connections"],
-            recommendations: ["Update to latest firmware"],
-          },
-        ],
-        networkStatus: {
-          encryption: Math.random() > 0.7 ? "WEP" : "WPA2",
-          firewall: Math.random() > 0.3,
-          guestNetwork: Math.random() > 0.5,
-          upnpEnabled: Math.random() > 0.4,
+      // Add a success alert
+      setAlerts((prev) => [
+        {
+          message: `Successfully fetched ${response.data.length} devices`,
+          timestamp: new Date().toLocaleTimeString(),
         },
-        securityScore: Math.floor(Math.random() * 40) + 60, // 60-100
-      }
+        ...prev,
+      ])
 
-      setScanResults(simulatedResults)
-    }, 8000)
-  }
+      setError(null)
+    } catch (err) {
+      console.error("Error fetching devices:", err)
+      setError("Failed to fetch devices. Check server connection.")
 
-  // Calculate the interpolated width for the progress bar
-  const progressWidth = animatedValue.interpolate({
-    inputRange: [0, 100],
-    outputRange: ["0%", "100%"],
-  })
+      // Add an error alert
+      setAlerts((prev) => [
+        {
+          message: `Error fetching devices: ${err.message}`,
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ])
 
-  // Get risk level color
-  const getRiskColor = (riskLevel) => {
-    switch (riskLevel) {
-      case "High":
-        return "#E53935"
-      case "Medium":
-        return "#FFA000"
-      case "Low":
-        return "#43A047"
-      default:
-        return "#757575"
+      // Use sample data as fallback
+      const sampleDevices = [
+        {
+          id: "1",
+          name: "Smart TV",
+          type: "Entertainment",
+          issues: [
+            { type: "outdated_firmware", description: "Firmware is outdated" },
+            { type: "weak_password", description: "Password is too weak" },
+          ],
+        },
+        {
+          id: "2",
+          name: "Smart Speaker",
+          type: "Voice Assistant",
+          issues: [],
+        },
+        {
+          id: "3",
+          name: "Wi-Fi Router",
+          type: "Network",
+          issues: [
+            { type: "default_credentials", description: "Using default credentials" },
+            { type: "remote_access", description: "Remote access is enabled" },
+          ],
+        },
+        {
+          id: "4",
+          name: "Smart Thermostat",
+          type: "Climate Control",
+          issues: [{ type: "insecure_api", description: "Using insecure API connections" }],
+        },
+        {
+          id: "5",
+          name: "Security Camera",
+          type: "Security",
+          issues: [],
+        },
+      ]
+
+      setDevices(sampleDevices)
+
+      // Add a fallback alert
+      setAlerts((prev) => [
+        {
+          message: "Using offline mode. Sample data loaded.",
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ])
     }
   }
+
+  // Initiate a network scan
+  const handleScan = async () => {
+    setScanning(true)
+    setError(null)
+
+    // Add a scanning alert
+    setAlerts((prev) => [
+      {
+        message: "Network scan initiated...",
+        timestamp: new Date().toLocaleTimeString(),
+      },
+      ...prev,
+    ])
+
+    try {
+      const response = await axios.post(`${SERVER_URL}/scan`)
+
+      if (response.status === 200) {
+        // Add a success alert
+        setAlerts((prev) => [
+          {
+            message: "Scan initiated successfully. Waiting for results...",
+            timestamp: new Date().toLocaleTimeString(),
+          },
+          ...prev,
+        ])
+
+        // After initiating the scan, poll for updated device list
+        setTimeout(fetchDevices, 5000) // Wait 5 seconds for scan to complete
+      }
+    } catch (err) {
+      console.error("Error scanning network:", err)
+      setError("Failed to start network scan. Check server connection.")
+
+      // Add an error alert
+      setAlerts((prev) => [
+        {
+          message: `Scan error: ${err.message}. Using offline mode.`,
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ])
+
+      setScanning(false)
+    }
+  }
+
+  // Fix an issue on a device
+  const fixIssue = async (deviceId, issueType) => {
+    try {
+      // Add a fixing alert
+      setAlerts((prev) => [
+        {
+          message: `Attempting to fix ${issueType} on device ${deviceId}...`,
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ])
+
+      const response = await axios.post(`${SERVER_URL}/fix`, {
+        deviceId,
+        issueType,
+      })
+
+      if (response.status === 200) {
+        // Add a success alert
+        setAlerts((prev) => [
+          {
+            message: `Successfully fixed ${issueType} on device ${deviceId}`,
+            timestamp: new Date().toLocaleTimeString(),
+          },
+          ...prev,
+        ])
+
+        fetchDevices() // Refresh device list after fix
+        setSelectedDevice(null) // Close the modal
+      }
+    } catch (err) {
+      console.error("Error fixing issue:", err)
+      setError(`Failed to fix ${issueType} on device ${deviceId}.`)
+
+      // Add an error alert
+      setAlerts((prev) => [
+        {
+          message: `Error fixing issue: ${err.message}`,
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ])
+
+      // Update the UI anyway for better UX
+      fetchDevices()
+    }
+  }
+
+  // Get issue description for display
+  const getIssueDescription = (issueType) => {
+    switch (issueType) {
+      case "outdated_firmware":
+        return "Update the firmware through the device settings."
+      case "weak_password":
+        return "Change the password to a stronger one with at least 12 characters, including uppercase, lowercase, numbers, and special characters."
+      case "default_credentials":
+        return "Change the default username and password to unique, strong credentials."
+      case "remote_access":
+        return "Disable remote access in the device settings unless absolutely necessary."
+      case "insecure_api":
+        return "Update to the latest firmware and check for security patches that address API vulnerabilities."
+      default:
+        return "Follow the manufacturer's security guidelines."
+    }
+  }
+
+  // Get status color based on issues
+  const getStatusColor = (issues) => {
+    if (!issues || issues.length === 0) {
+      return "#43A047" // Green - secure
+    }
+    return "#E53935" // Red - vulnerable
+  }
+
+  // Render each device in the list
+  const renderDeviceItem = ({ item }) => (
+    <TouchableOpacity style={styles.deviceItem} onPress={() => setSelectedDevice(item)}>
+      <View style={styles.deviceItemContent}>
+        <View>
+          <Text style={styles.deviceName}>{item.name}</Text>
+          <Text style={styles.deviceType}>{item.type}</Text>
+        </View>
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor: getStatusColor(item.issues) + "20",
+              borderColor: getStatusColor(item.issues),
+            },
+          ]}
+        >
+          <Text style={[styles.statusText, { color: getStatusColor(item.issues) }]}>
+            {item.issues && item.issues.length > 0 ? "Vulnerable" : "Secure"}
+          </Text>
+        </View>
+      </View>
+      {item.issues && item.issues.length > 0 && (
+        <View style={styles.vulnerabilityCount}>
+          <Text style={styles.vulnerabilityCountText}>
+            {item.issues.length} {item.issues.length === 1 ? "issue" : "issues"} detected
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  )
+
+  // Render each alert in the list
+  const renderAlertItem = ({ item }) => (
+    <View style={styles.alertItem}>
+      <Text style={styles.alertMessage}>{item.message}</Text>
+      <Text style={styles.alertTimestamp}>{item.timestamp}</Text>
+    </View>
+  )
 
   return (
     <SafeAreaView style={styles.container}>
@@ -127,182 +292,144 @@ export default function SmartHomeSecurityScreen({ navigation }) {
         style={styles.backgroundImage}
       >
         <View style={styles.overlay}>
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.header}>
-              <Text style={styles.appName}>CyberGuard</Text>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.backButtonText}>Back</Text>
+          <View style={styles.header}>
+            <Text style={styles.appName}>CyberGuard</Text>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.content}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Smart Home Guardian</Text>
+              <Text style={styles.subtitle}>Monitor and secure your connected devices</Text>
+            </View>
+
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Error: {error}</Text>
+              </View>
+            )}
+
+            <View style={styles.scannerCard}>
+              <Text style={styles.scannerCardTitle}>Network Scanner</Text>
+              <Text style={styles.scannerCardText}>
+                Scan your home network to discover connected devices and identify potential security vulnerabilities.
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.scanButton, scanning && styles.scanningButton]}
+                onPress={handleScan}
+                disabled={scanning}
+              >
+                {scanning ? (
+                  <View style={styles.scanningButtonContent}>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text style={styles.scanButtonText}>Scanning...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.scanButtonText}>Scan Network</Text>
+                )}
               </TouchableOpacity>
             </View>
 
-            <View style={styles.content}>
-              <View style={styles.titleContainer}>
-                <Text style={styles.title}>Smart Home Security Scanner</Text>
-                <Text style={styles.subtitle}>Scan your home network for potential security vulnerabilities</Text>
+            {devices.length > 0 && (
+              <View style={styles.devicesSection}>
+                <Text style={styles.sectionTitle}>Discovered Devices</Text>
+                <FlatList
+                  data={devices}
+                  renderItem={renderDeviceItem}
+                  keyExtractor={(item) => item.id}
+                  style={styles.devicesList}
+                  scrollEnabled={false}
+                  ListEmptyComponent={<Text style={styles.emptyListText}>No devices found.</Text>}
+                />
               </View>
+            )}
 
-              <View style={styles.scannerCard}>
-                <Text style={styles.scannerCardTitle}>Network Scanner</Text>
-                <Text style={styles.scannerCardText}>
-                  This scanner will check your home network for connected devices and identify potential security
-                  vulnerabilities. The scan takes approximately 8 seconds to complete.
-                </Text>
-
-                {isScanning ? (
-                  <View style={styles.scanningContainer}>
-                    <Text style={styles.scanningText}>Scanning your network...</Text>
-                    <Text style={styles.scanProgressText}>{Math.floor(scanProgress)}%</Text>
-
-                    <View style={styles.progressBarContainer}>
-                      <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
-                    </View>
-
-                    <Text style={styles.scanningDetailsText}>Checking for connected devices and vulnerabilities</Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity style={styles.scanButton} onPress={startScan}>
-                    <Text style={styles.scanButtonText}>Start Network Scan</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {scanResults && (
-                <View style={styles.resultsSection}>
-                  <View style={styles.resultsSummaryCard}>
-                    <Text style={styles.resultsSummaryTitle}>Scan Results</Text>
-
-                    <View style={styles.resultsSummaryRow}>
-                      <View style={styles.resultsSummaryItem}>
-                        <Text style={styles.resultsSummaryValue}>{scanResults.devicesFound}</Text>
-                        <Text style={styles.resultsSummaryLabel}>Devices Found</Text>
-                      </View>
-
-                      <View style={styles.resultsSummaryItem}>
-                        <Text style={styles.resultsSummaryValue}>{scanResults.vulnerabilities.length}</Text>
-                        <Text style={styles.resultsSummaryLabel}>Vulnerabilities</Text>
-                      </View>
-
-                      <View style={styles.resultsSummaryItem}>
-                        <Text
-                          style={[
-                            styles.resultsSummaryValue,
-                            {
-                              color:
-                                scanResults.securityScore > 80
-                                  ? "#43A047"
-                                  : scanResults.securityScore > 70
-                                    ? "#FFA000"
-                                    : "#E53935",
-                            },
-                          ]}
-                        >
-                          {scanResults.securityScore}%
-                        </Text>
-                        <Text style={styles.resultsSummaryLabel}>Security Score</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <Text style={styles.sectionTitle}>Vulnerabilities Found</Text>
-
-                  {scanResults.vulnerabilities.map((vulnerability, index) => (
-                    <View key={index} style={styles.vulnerabilityCard}>
-                      <View style={styles.vulnerabilityHeader}>
-                        <View>
-                          <Text style={styles.vulnerabilityDevice}>{vulnerability.deviceName}</Text>
-                          <Text style={styles.vulnerabilityType}>{vulnerability.deviceType}</Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.riskBadge,
-                            {
-                              backgroundColor: getRiskColor(vulnerability.riskLevel) + "20",
-                              borderColor: getRiskColor(vulnerability.riskLevel),
-                            },
-                          ]}
-                        >
-                          <Text style={[styles.riskText, { color: getRiskColor(vulnerability.riskLevel) }]}>
-                            {vulnerability.riskLevel} Risk
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.vulnerabilityDetails}>
-                        <Text style={styles.vulnerabilityDetailsTitle}>Issues:</Text>
-                        {vulnerability.issues.map((issue, i) => (
-                          <Text key={i} style={styles.vulnerabilityIssue}>
-                            • {issue}
-                          </Text>
-                        ))}
-
-                        <Text style={styles.vulnerabilityDetailsTitle}>Recommendations:</Text>
-                        {vulnerability.recommendations.map((rec, i) => (
-                          <Text key={i} style={styles.vulnerabilityRecommendation}>
-                            • {rec}
-                          </Text>
-                        ))}
-                      </View>
-
-                      <TouchableOpacity style={styles.fixButton}>
-                        <Text style={styles.fixButtonText}>Fix Issues</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-
-                  <Text style={styles.sectionTitle}>Network Status</Text>
-
-                  <View style={styles.networkStatusCard}>
-                    <View style={styles.networkStatusItem}>
-                      <Text style={styles.networkStatusLabel}>Encryption:</Text>
-                      <Text
-                        style={[
-                          styles.networkStatusValue,
-                          { color: scanResults.networkStatus.encryption === "WPA2" ? "#43A047" : "#E53935" },
-                        ]}
-                      >
-                        {scanResults.networkStatus.encryption}
-                      </Text>
-                    </View>
-
-                    <View style={styles.networkStatusItem}>
-                      <Text style={styles.networkStatusLabel}>Firewall:</Text>
-                      <Text
-                        style={[
-                          styles.networkStatusValue,
-                          { color: scanResults.networkStatus.firewall ? "#43A047" : "#E53935" },
-                        ]}
-                      >
-                        {scanResults.networkStatus.firewall ? "Enabled" : "Disabled"}
-                      </Text>
-                    </View>
-
-                    <View style={styles.networkStatusItem}>
-                      <Text style={styles.networkStatusLabel}>Guest Network:</Text>
-                      <Text style={styles.networkStatusValue}>
-                        {scanResults.networkStatus.guestNetwork ? "Enabled" : "Disabled"}
-                      </Text>
-                    </View>
-
-                    <View style={styles.networkStatusItem}>
-                      <Text style={styles.networkStatusLabel}>UPnP:</Text>
-                      <Text
-                        style={[
-                          styles.networkStatusValue,
-                          { color: scanResults.networkStatus.upnpEnabled ? "#FFA000" : "#43A047" },
-                        ]}
-                      >
-                        {scanResults.networkStatus.upnpEnabled ? "Enabled" : "Disabled"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity style={styles.rescanButton} onPress={startScan}>
-                    <Text style={styles.rescanButtonText}>Scan Again</Text>
-                  </TouchableOpacity>
+            <View style={styles.alertsSection}>
+              <Text style={styles.sectionTitle}>Recent Alerts</Text>
+              {alerts.length > 0 ? (
+                <FlatList
+                  data={alerts}
+                  renderItem={renderAlertItem}
+                  keyExtractor={(item, index) => index.toString()}
+                  style={styles.alertsList}
+                  scrollEnabled={false}
+                />
+              ) : (
+                <View style={styles.noAlertsContainer}>
+                  <Text style={styles.noAlertsText}>No recent alerts</Text>
                 </View>
               )}
             </View>
-          </ScrollView>
+          </View>
+
+          {/* Device Details Modal */}
+          <Modal visible={!!selectedDevice} animationType="slide" transparent={true}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                {selectedDevice && (
+                  <>
+                    <Text style={styles.modalTitle}>{selectedDevice.name}</Text>
+
+                    <View style={styles.deviceInfoSection}>
+                      <View style={styles.deviceInfoRow}>
+                        <Text style={styles.deviceInfoLabel}>Type:</Text>
+                        <Text style={styles.deviceInfoValue}>{selectedDevice.type}</Text>
+                      </View>
+                      <View style={styles.deviceInfoRow}>
+                        <Text style={styles.deviceInfoLabel}>Status:</Text>
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            {
+                              backgroundColor: getStatusColor(selectedDevice.issues) + "20",
+                              borderColor: getStatusColor(selectedDevice.issues),
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.statusText, { color: getStatusColor(selectedDevice.issues) }]}>
+                            {selectedDevice.issues && selectedDevice.issues.length > 0 ? "Vulnerable" : "Secure"}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {selectedDevice.issues && selectedDevice.issues.length > 0 ? (
+                      <View style={styles.vulnerabilitiesSection}>
+                        <Text style={styles.vulnerabilitiesTitle}>Issues:</Text>
+                        {selectedDevice.issues.map((issue, index) => (
+                          <View key={index} style={styles.vulnerabilityItem}>
+                            <View style={styles.vulnerabilityHeader}>
+                              <Text style={styles.vulnerabilityName}>{issue.description}</Text>
+                              <TouchableOpacity
+                                style={styles.fixButton}
+                                onPress={() => fixIssue(selectedDevice.id, issue.type)}
+                              >
+                                <Text style={styles.fixButtonText}>Fix</Text>
+                              </TouchableOpacity>
+                            </View>
+                            <Text style={styles.vulnerabilityFix}>{getIssueDescription(issue.type)}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <View style={styles.secureDeviceMessage}>
+                        <Text style={styles.secureDeviceText}>This device is secure.</Text>
+                      </View>
+                    )}
+
+                    <View style={styles.modalActions}>
+                      <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedDevice(null)}>
+                        <Text style={styles.closeButtonText}>Close</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+            </View>
+          </Modal>
         </View>
       </ImageBackground>
     </SafeAreaView>
@@ -321,9 +448,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(18, 24, 38, 0.92)",
-  },
-  scrollContainer: {
-    flexGrow: 1,
   },
   header: {
     paddingTop: 60,
@@ -354,7 +478,7 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   titleContainer: {
-    marginBottom: 25,
+    marginBottom: 15,
   },
   title: {
     fontSize: 28,
@@ -366,6 +490,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "rgba(255, 255, 255, 0.7)",
     lineHeight: 22,
+  },
+  errorContainer: {
+    backgroundColor: "rgba(229, 57, 53, 0.1)",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: "#E53935",
+  },
+  errorText: {
+    color: "#E53935",
+    fontSize: 14,
   },
   scannerCard: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -398,76 +534,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
+  scanningButton: {
+    backgroundColor: "#5E72E4",
+    opacity: 0.8,
+  },
+  scanningButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   scanButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  scanningContainer: {
-    alignItems: "center",
-  },
-  scanningText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 10,
-  },
-  scanProgressText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#5E72E4",
-    marginBottom: 10,
-  },
-  progressBarContainer: {
-    width: "100%",
-    height: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 5,
-    overflow: "hidden",
-    marginBottom: 15,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#5E72E4",
-  },
-  scanningDetailsText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "center",
-  },
-  resultsSection: {
-    marginTop: 10,
-  },
-  resultsSummaryCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 25,
-  },
-  resultsSummaryTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  resultsSummaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  resultsSummaryItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  resultsSummaryValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 5,
-  },
-  resultsSummaryLabel: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
+    marginLeft: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -475,103 +555,207 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 15,
   },
-  vulnerabilityCard: {
+  devicesSection: {
+    marginBottom: 25,
+  },
+  devicesList: {
+    marginBottom: 10,
+  },
+  emptyListText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    textAlign: "center",
+    padding: 20,
+  },
+  deviceItem: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
   },
-  vulnerabilityHeader: {
+  deviceItemContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  vulnerabilityDevice: {
+  deviceName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+    marginBottom: 4,
   },
-  vulnerabilityType: {
+  deviceType: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.7)",
   },
-  riskBadge: {
+  statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
   },
-  riskText: {
+  statusText: {
     fontSize: 12,
     fontWeight: "600",
   },
-  vulnerabilityDetails: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  vulnerabilityCount: {
+    backgroundColor: "rgba(229, 57, 53, 0.1)",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    padding: 8,
   },
-  vulnerabilityDetailsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 5,
-    marginTop: 8,
+  vulnerabilityCountText: {
+    color: "#E53935",
+    fontSize: 12,
+    fontWeight: "500",
   },
-  vulnerabilityIssue: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 3,
+  alertsSection: {
+    flex: 1,
   },
-  vulnerabilityRecommendation: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 3,
+  alertsList: {
+    flex: 1,
   },
-  fixButton: {
-    backgroundColor: "#5E72E4",
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-  },
-  fixButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  networkStatusCard: {
+  alertItem: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: "#FFA000",
+  },
+  alertMessage: {
+    fontSize: 14,
+    color: "#fff",
+    marginBottom: 5,
+  },
+  alertTimestamp: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.5)",
+  },
+  noAlertsContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noAlertsText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#121826",
+    borderRadius: 12,
+    padding: 20,
+    width: "100%",
+    maxHeight: "80%",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  deviceInfoSection: {
     marginBottom: 20,
   },
-  networkStatusItem: {
+  deviceInfoRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  deviceInfoLabel: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.7)",
+    width: 80,
+  },
+  deviceInfoValue: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "500",
+  },
+  vulnerabilitiesSection: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+  },
+  vulnerabilitiesTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    marginBottom: 10,
+  },
+  vulnerabilityItem: {
+    marginBottom: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
-  networkStatusLabel: {
+  vulnerabilityHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  vulnerabilityName: {
     fontSize: 14,
+    fontWeight: "600",
+    color: "#E53935",
+    flex: 1,
+    marginRight: 10,
+  },
+  fixButton: {
+    backgroundColor: "#FFA000",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  fixButtonText: {
     color: "#fff",
+    fontSize: 12,
     fontWeight: "600",
   },
-  networkStatusValue: {
+  vulnerabilityFix: {
     fontSize: 14,
-    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.8)",
+    lineHeight: 20,
   },
-  rescanButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  secureDeviceMessage: {
+    backgroundColor: "rgba(67, 160, 71, 0.1)",
     borderRadius: 8,
     padding: 15,
+    marginBottom: 20,
     alignItems: "center",
-    marginTop: 10,
   },
-  rescanButtonText: {
-    color: "#5E72E4",
-    fontSize: 16,
+  secureDeviceText: {
+    color: "#43A047",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  closeButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 8,
+    padding: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 14,
     fontWeight: "600",
   },
 })

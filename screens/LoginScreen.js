@@ -12,8 +12,11 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ImageBackground,
+  SafeAreaView,
 } from "react-native"
 import { useUser } from "../context/UserContext"
+import { StatusBar } from "expo-status-bar"
 
 export default function LoginScreen({ navigation }) {
   const { loginUser } = useUser()
@@ -67,82 +70,140 @@ export default function LoginScreen({ navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.inner}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" />
+      <ImageBackground
+        source={{
+          uri: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+        }}
+        style={styles.backgroundImage}
+      >
+        <View style={styles.overlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardAvoidingView}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.inner}>
+                <View style={styles.header}>
+                  <Text style={styles.appName}>CyberGuard</Text>
+                  <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Home")}>
+                    <Text style={styles.backButtonText}>Back</Text>
+                  </TouchableOpacity>
+                </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-            </View>
+                <View style={styles.formContainer}>
+                  <Text style={styles.title}>Welcome Back</Text>
+                  <Text style={styles.subtitle}>Sign in to continue to CyberGuard</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-            </View>
+                  <View style={styles.form}>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.label}>Email</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter your email"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+                    </View>
 
-            <TouchableOpacity>
-              <Text style={styles.forgotPassword}>Forgot Password?</Text>
-            </TouchableOpacity>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.label}>Password</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter your password"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                      />
+                      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+                    </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Log In</Text>
-            </TouchableOpacity>
-          </View>
+                    <TouchableOpacity>
+                      <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                    </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-              <Text style={styles.footerLink}>Register</Text>
-            </TouchableOpacity>
-          </View>
+                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                      <Text style={styles.buttonText}>Log In</Text>
+                    </TouchableOpacity>
+                  </View>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Home")}>
-            <Text style={styles.backButtonText}>Back to Home</Text>
-          </TouchableOpacity>
+                  <View style={styles.footer}>
+                    <Text style={styles.footerText}>Don't have an account? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                      <Text style={styles.footerLink}>Register</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+      </ImageBackground>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+  },
+  backgroundImage: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(18, 24, 38, 0.92)",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   inner: {
     flex: 1,
-    padding: 24,
-    justifyContent: "space-around",
   },
-  title: {
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  appName: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#333",
-    marginTop: 50,
+    color: "#fff",
+  },
+  backButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  backButtonText: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  formContainer: {
+    flex: 1,
+    padding: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: "rgba(255, 255, 255, 0.7)",
     marginBottom: 30,
   },
   form: {
@@ -153,31 +214,40 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "#333",
+    color: "#fff",
     marginBottom: 8,
+    fontWeight: "500",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 12,
+    padding: 15,
     fontSize: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    color: "#fff",
   },
   errorText: {
-    color: "red",
+    color: "#FF5E57",
     fontSize: 14,
     marginTop: 5,
   },
   forgotPassword: {
-    color: "#4A90E2",
+    color: "#5E72E4",
     textAlign: "right",
     marginBottom: 20,
+    fontSize: 14,
   },
   button: {
-    backgroundColor: "#4A90E2",
-    borderRadius: 8,
-    padding: 15,
+    backgroundColor: "#5E72E4",
+    borderRadius: 12,
+    padding: 16,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#5E72E4",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   buttonText: {
     color: "#fff",
@@ -190,21 +260,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerText: {
-    color: "#666",
+    color: "rgba(255, 255, 255, 0.7)",
     fontSize: 16,
   },
   footerLink: {
-    color: "#4A90E2",
+    color: "#5E72E4",
     fontSize: 16,
     fontWeight: "600",
-  },
-  backButton: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  backButtonText: {
-    color: "#666",
-    fontSize: 16,
   },
 })
 

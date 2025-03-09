@@ -1,14 +1,4 @@
-import React from "react"
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Image,
-  Linking,
-} from "react-native"
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ScrollView, Image, Linking } from "react-native"
 import { StatusBar } from "expo-status-bar"
 
 export default function AboutUsScreen({ navigation }) {
@@ -19,7 +9,7 @@ export default function AboutUsScreen({ navigation }) {
       name: "Shiv Davay",
       role: "CEO & Security Architect",
       bio: "Security expert with a passion for building intuitive, secure systems that protect user data without compromising on experience.",
-      image: "/placeholder.svg?height=150&width=150", // Placeholder - replace with actual image
+      image: "https://randomuser.me/api/portraits/men/32.jpg", // Placeholder - replace with actual image
       linkedin: "https://linkedin.com/in/",
       github: "https://github.com/",
     },
@@ -28,7 +18,7 @@ export default function AboutUsScreen({ navigation }) {
       name: "Parthiv Maddipatla",
       role: "CTO & Backend Developer",
       bio: "Specializes in secure infrastructure and backend development with expertise in blockchain technologies and API integrations.",
-      image: "/placeholder.svg?height=150&width=150", // Placeholder - replace with actual image
+      image: "https://randomuser.me/api/portraits/men/41.jpg", // Placeholder - replace with actual image
       linkedin: "https://linkedin.com/in/",
       github: "https://github.com/",
     },
@@ -37,7 +27,7 @@ export default function AboutUsScreen({ navigation }) {
       name: "Svaran Medavarapu",
       role: "Lead Frontend Developer",
       bio: "UI/UX specialist focusing on creating intuitive interfaces that make complex security concepts accessible to everyone.",
-      image: "/placeholder.svg?height=150&width=150", // Placeholder - replace with actual image
+      image: "https://randomuser.me/api/portraits/men/55.jpg", // Placeholder - replace with actual image
       linkedin: "https://linkedin.com/in/",
       github: "https://github.com/",
     },
@@ -46,7 +36,7 @@ export default function AboutUsScreen({ navigation }) {
       name: "Aahan Sachdeva",
       role: "AI & ML Specialist",
       bio: "Developing cutting-edge AI models to enhance security threat detection and provide intelligent responses to emerging threats.",
-      image: "/placeholder.svg?height=150&width=150", // Placeholder - replace with actual image
+      image: "https://randomuser.me/api/portraits/men/67.jpg", // Placeholder - replace with actual image
       linkedin: "https://linkedin.com/in/",
       github: "https://github.com/",
     },
@@ -72,42 +62,32 @@ export default function AboutUsScreen({ navigation }) {
           <View style={styles.ourStorySection}>
             <Text style={styles.sectionTitle}>Our Story</Text>
             <Text style={styles.storyText}>
-              CyberGuard was founded with a simple but powerful mission: to make advanced cybersecurity 
-              accessible to everyone. In an increasingly connected world, we believe that robust security 
-              shouldn't be a luxury - it should be the standard.
+              CyberGuard was founded with a simple but powerful mission: to make advanced cybersecurity accessible to
+              everyone. In an increasingly connected world, we believe that robust security shouldn't be a luxury - it
+              should be the standard.
             </Text>
             <Text style={styles.storyText}>
-              Our team combines expertise in cybersecurity, artificial intelligence, and user experience 
-              design to create solutions that protect what matters most without getting in the way of 
-              your digital life.
+              Our team combines expertise in cybersecurity, artificial intelligence, and user experience design to
+              create solutions that protect what matters most without getting in the way of your digital life.
             </Text>
           </View>
 
           <View style={styles.teamSection}>
             <Text style={styles.sectionTitle}>The Team</Text>
-            
+
             {teamMembers.map((member) => (
               <View key={member.id} style={styles.teamMemberCard}>
                 <View style={styles.teamMemberHeader}>
-                  <Image 
-                    source={{ uri: member.image }} 
-                    style={styles.teamMemberImage} 
-                  />
+                  <Image source={{ uri: member.image }} style={styles.teamMemberImage} />
                   <View style={styles.teamMemberInfo}>
                     <Text style={styles.teamMemberName}>{member.name}</Text>
                     <Text style={styles.teamMemberRole}>{member.role}</Text>
-                    
+
                     <View style={styles.socialLinks}>
-                      <TouchableOpacity 
-                        style={styles.socialButton}
-                        onPress={() => Linking.openURL(member.linkedin)}
-                      >
+                      <TouchableOpacity style={styles.socialButton} onPress={() => Linking.openURL(member.linkedin)}>
                         <Text style={styles.socialButtonText}>LinkedIn</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={styles.socialButton}
-                        onPress={() => Linking.openURL(member.github)}
-                      >
+                      <TouchableOpacity style={styles.socialButton} onPress={() => Linking.openURL(member.github)}>
                         <Text style={styles.socialButtonText}>GitHub</Text>
                       </TouchableOpacity>
                     </View>
@@ -121,8 +101,8 @@ export default function AboutUsScreen({ navigation }) {
           <View style={styles.missionSection}>
             <Text style={styles.sectionTitle}>Our Mission</Text>
             <Text style={styles.missionText}>
-              At CyberGuard, we're committed to creating a safer digital world through innovative security solutions 
-              that protect users without compromising on experience. We believe security should be invisible yet 
+              At CyberGuard, we're committed to creating a safer digital world through innovative security solutions
+              that protect users without compromising on experience. We believe security should be invisible yet
               powerful - working hard in the background so you don't have to worry.
             </Text>
             <View style={styles.valuesList}>
@@ -152,9 +132,9 @@ export default function AboutUsScreen({ navigation }) {
               <Text style={styles.contactText}>Support: support@cyberguard.com</Text>
               <Text style={styles.contactText}>Location: San Francisco, CA</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.contactButton}
-              onPress={() => Linking.openURL('mailto:team@cyberguard.com')}
+              onPress={() => Linking.openURL("mailto:team@cyberguard.com")}
             >
               <Text style={styles.contactButtonText}>Get in Touch</Text>
             </TouchableOpacity>
@@ -347,3 +327,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 })
+

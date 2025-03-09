@@ -13,6 +13,7 @@ import ChatbotScreen from "./screens/ChatbotScreen"
 import AboutUsScreen from "./screens/AboutUsScreen"
 import { UserProvider } from "./context/UserContext"
 import { AuthProvider } from "./context/AuthContext"
+import KeywordSearchScreen from "./screens/KeywordSearchScreen"
 
 const Stack = createNativeStackNavigator()
 
@@ -21,29 +22,21 @@ export default function App() {
     <AuthProvider>
       <UserProvider>
         <NavigationContainer>
-          <StatusBar style="light" />
+          <StatusBar style="auto" />
           <Stack.Navigator initialRouteName="Home">
             <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
             <Stack.Screen
               name="Login"
               component={LoginScreen}
               options={{
-                title: "Log In",
-                headerStyle: {
-                  backgroundColor: "#1A2033",
-                },
-                headerTintColor: "#fff",
+                headerShown: false,
               }}
             />
             <Stack.Screen
               name="Register"
               component={RegisterScreen}
               options={{
-                title: "Create Account",
-                headerStyle: {
-                  backgroundColor: "#1A2033",
-                },
-                headerTintColor: "#fff",
+                headerShown: false,
               }}
             />
             <Stack.Screen
@@ -102,10 +95,18 @@ export default function App() {
                 gestureEnabled: true,
               }}
             />
+            <Stack.Screen
+              name="KeywordSearch"
+              component={KeywordSearchScreen}
+              options={{
+                headerShown: false,
+                gestureEnabled: true,
+              }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </UserProvider>
     </AuthProvider>
   )
 }
-  
+

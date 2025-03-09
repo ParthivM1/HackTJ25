@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   StyleSheet,
   Text,
@@ -17,6 +17,9 @@ import {
 } from "react-native"
 import { StatusBar } from "expo-status-bar"
 
+const FLASK_SERVER_URL = "http://10.180.0.129:5001"
+const PERSONAL_NUMBER = '+12029972969'
+
 export default function RoamAlertScreen({ navigation }) {
   const [alertSettings, setAlertSettings] = useState({
     phoneCallAlerts: true,
@@ -24,6 +27,35 @@ export default function RoamAlertScreen({ navigation }) {
     smsAlerts: false,
     emailAlerts: true,
   })
+
+  const sendServerCall = async () => {
+    try {
+      console.log("Sending server call request to Flask server")
+      const response = await fetch(`${FLASK_SERVER_URL}/start-call`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alertId: `call-${Date.now()}`,
+          alertType: "Manual Server Call",
+          phoneNumber: PERSONAL_NUMBER,
+          message: "This is a test call from CyberGuard triggered manually via the server."
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("Server call response:", data)
+      Alert.alert("Call Initiated", "A test call has been triggered via the server. Check your phone.")
+    } catch (error) {
+      console.error("Error sending server call:", error)
+      Alert.alert("Call Error", "Failed to initiate server call. Please check the server and try again.", [{ text: "OK" }])
+    }
+  }
 
   const [alertHistory, setAlertHistory] = useState([
     {
@@ -87,7 +119,7 @@ export default function RoamAlertScreen({ navigation }) {
   }
 
   // Simulate receiving a security alert
-  const simulateSecurityAlert = () => {
+  const simulateSecurityAlert = async () => {
     const newAlert = {
       id: `alert-${Math.floor(Math.random() * 1000)}`,
       date: new Date().toISOString(),
@@ -102,12 +134,10 @@ export default function RoamAlertScreen({ navigation }) {
     setCurrentAlert(newAlert)
     setShowAlert(true)
 
-    // Trigger vibration pattern for alert
     if (Platform.OS !== "web") {
       Vibration.vibrate([500, 300, 500])
     }
 
-    // Start alert animation
     Animated.sequence([
       Animated.timing(alertAnimation, {
         toValue: 1,
@@ -125,10 +155,44 @@ export default function RoamAlertScreen({ navigation }) {
         useNativeDriver: true,
       }),
     ]).start()
+
+    try {
+      console.log("Sending alert to Flask server:", FLASK_SERVER_URL)
+      const response = await fetch(`${FLASK_SERVER_URL}/alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alertId: newAlert.id,
+          alertType: newAlert.type,
+          severity: newAlert.severity,
+          timestamp: newAlert.date,
+          deviceAffected: newAlert.device,
+          details: newAlert.details,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("Server response:", data)
+    } catch (error) {
+      console.error("Error sending alert to server:", error)
+      setTimeout(() => {
+        Alert.alert(
+          "Server Communication Error",
+          "Could not send alert to security server. The alert is still active locally.",
+          [{ text: "OK" }],
+        )
+      }, 1000)
+    }
   }
 
-  // Simulate phone call
-  const simulatePhoneCall = () => {
+  // Trigger phone call alert
+  const simulatePhoneCall = async () => {
     if (!alertSettings.phoneCallAlerts) {
       Alert.alert("Phone Calls Disabled", "Enable phone call alerts in settings to receive automated security calls.", [
         { text: "OK" },
@@ -138,7 +202,6 @@ export default function RoamAlertScreen({ navigation }) {
 
     setSimulatingCall(true)
 
-    // Animate the call indicator
     Animated.loop(
       Animated.sequence([
         Animated.timing(callAnimation, {
@@ -154,37 +217,116 @@ export default function RoamAlertScreen({ navigation }) {
       ]),
     ).start()
 
-    // Simulate call duration
+    try {
+      console.log("Sending phone call request to Flask server")
+      const response = await fetch(`${FLASK_SERVER_URL}/phone-alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alertId: currentAlert?.id || `call-${Date.now()}`,
+          alertType: currentAlert?.type || "Security Breach",
+          phoneNumber: PERSONAL_NUMBER, // Replace with actual user phone number in production
+          message: currentAlert?.details || "Security alert detected. Please check your CyberGuard app for details.",
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("Server phone call response:", data)
+      Alert.alert("Call Initiated", "An automated security call has been triggered. Check your phone.")
+    } catch (error) {
+      console.error("Error initiating phone call:", error)
+      Alert.alert("Call Service Error", "Failed to initiate phone call. Please try again.", [{ text: "OK" }])
+    }
+
     setTimeout(() => {
       setSimulatingCall(false)
       callAnimation.setValue(0)
-
-      // Add to history after call ends
       if (currentAlert) {
         setAlertHistory((prev) => [currentAlert, ...prev])
       }
-    }, 5000)
+    }, 10000) // Adjust based on actual call duration
   }
 
   // Handle alert response
-  const handleAlertResponse = (action) => {
+  const handleAlertResponse = async (action) => {
     setShowAlert(false)
 
+    try {
+      console.log(`Sending user response (${action}) to server`)
+      await fetch(`${FLASK_SERVER_URL}/alert-response`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alertId: currentAlert?.id,
+          userAction: action,
+          timestamp: new Date().toISOString(),
+        }),
+      })
+    } catch (error) {
+      console.error("Error sending response to server:", error)
+    }
+
     if (action === "view") {
-      // In a real app, this would navigate to detailed alert info
       Alert.alert("Alert Details", currentAlert?.details || "No additional details available.", [{ text: "OK" }])
     }
 
-    // Add to history
     if (currentAlert && !alertHistory.some((alert) => alert.id === currentAlert.id)) {
       setAlertHistory((prev) => [currentAlert, ...prev])
     }
   }
 
   // Resolve an alert
-  const resolveAlert = (alertId) => {
+  const resolveAlert = async (alertId) => {
     setAlertHistory((prev) => prev.map((alert) => (alert.id === alertId ? { ...alert, resolved: true } : alert)))
+
+    try {
+      console.log(`Notifying server about resolved alert: ${alertId}`)
+      await fetch(`${FLASK_SERVER_URL}/resolve-alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alertId: alertId,
+          resolvedAt: new Date().toISOString(),
+        }),
+      })
+    } catch (error) {
+      console.error("Error notifying server about resolved alert:", error)
+    }
   }
+
+  // Fetch alert history from the server on mount
+  useEffect(() => {
+    const fetchAlertHistory = async () => {
+      try {
+        console.log("Fetching alert history from server")
+        const response = await fetch(`${FLASK_SERVER_URL}/alert-history`)
+
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("Received alert history:", data)
+        if (data.success && Array.isArray(data.alerts) && data.alerts.length > 0) {
+          setAlertHistory(data.alerts)
+        }
+      } catch (error) {
+        console.error("Error fetching alert history:", error)
+      }
+    }
+
+    fetchAlertHistory()
+  }, [])
 
   return (
     <SafeAreaView style={styles.container}>
@@ -285,13 +427,20 @@ export default function RoamAlertScreen({ navigation }) {
               disabled={simulatingCall}
             >
               <Text style={styles.testButtonText}>
-                {simulatingCall ? "Call in progress..." : "Simulate Phone Call Alert"}
+                {simulatingCall ? "Call in Progress..." : "Trigger Phone Call Alert"}
               </Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={[styles.testButton, { backgroundColor: "#FFA000" }]} 
+              onPress={sendServerCall}
+            >
+              <Text style={styles.testButtonText}>Send Server Call</Text>
+            </TouchableOpacity>
+            
             {simulatingCall && (
               <Animated.View style={[styles.callIndicator, { opacity: callAnimation }]}>
-                <Text style={styles.callIndicatorText}>Simulating automated security call...</Text>
+                <Text style={styles.callIndicatorText}>Automated security call in progress...</Text>
               </Animated.View>
             )}
           </View>
@@ -346,12 +495,12 @@ export default function RoamAlertScreen({ navigation }) {
           <View style={styles.integrationInfoCard}>
             <Text style={styles.integrationInfoTitle}>About Roam API Integration</Text>
             <Text style={styles.integrationInfoText}>
-              This feature uses Roam API and Twilio to automatically call you when security breaches are detected. The
-              system will provide voice alerts with details about the potential threat.
+              This feature is connected to a Flask server at {FLASK_SERVER_URL} that processes security alerts and can
+              trigger automated calls when security breaches are detected.
             </Text>
             <Text style={styles.integrationInfoText}>
-              To complete setup, upload your Roam/Twilio Python code to enable real automated calls from your Google
-              Voice API phone number.
+              The system provides real-time alerts with details about potential threats and logs all security events for
+              future reference.
             </Text>
           </View>
         </View>
@@ -773,4 +922,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 })
-

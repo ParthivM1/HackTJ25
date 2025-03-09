@@ -5,8 +5,10 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-      <ImageBackground 
-        source={{ uri: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" }}
+      <ImageBackground
+        source={{
+          uri: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+        }}
         style={styles.backgroundImage}
       >
         <View style={styles.overlay}>
@@ -19,10 +21,7 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.content}>
             <View style={styles.logoContainer}>
-              <Image 
-                source={{ uri: "https://cdn-icons-png.flaticon.com/512/2431/2431970.png" }} 
-                style={styles.logo} 
-              />
+              <Image source={{ uri: "https://cdn-icons-png.flaticon.com/512/2431/2431970.png" }} style={styles.logo} />
             </View>
             <Text style={styles.title}>Welcome to CyberGuard</Text>
             <Text style={styles.subtitle}>
@@ -31,10 +30,7 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.button} 
-              onPress={() => navigation.navigate("Login")}
-            >
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Login")}>
               <Text style={styles.buttonText}>Log In</Text>
             </TouchableOpacity>
 
@@ -87,12 +83,12 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(18, 24, 38, 0.92)',
+    backgroundColor: "rgba(18, 24, 38, 0.92)",
     paddingHorizontal: 20,
   },
   header: {
@@ -223,3 +219,4 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 })
+

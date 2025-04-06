@@ -92,6 +92,20 @@ export default function DashboardScreen({ route, navigation }) {
                 <Text style={styles.featureDescription}>Check if your keywords have been exposed in data breaches</Text>
               </View>
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.featureCard} onPress={() => navigation.navigate("TempEmail")}>
+              <View style={styles.featureIconContainer}>
+                <View style={[styles.featureIcon, { backgroundColor: "#F3E5F5" }]}>
+                  <Text style={[styles.featureIconText, { color: "#9C27B0" }]}>📧</Text>
+                </View>
+              </View>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>Temporary Email</Text>
+                <Text style={styles.featureDescription}>
+                  Generate disposable email addresses to protect your privacy
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.statsContainer}>

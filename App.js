@@ -14,6 +14,7 @@ import AboutUsScreen from "./screens/AboutUsScreen"
 import { UserProvider } from "./context/UserContext"
 import { AuthProvider } from "./context/AuthContext"
 import KeywordSearchScreen from "./screens/KeywordSearchScreen"
+import TempEmailScreen from "./screens/TempEmailScreen"
 
 const Stack = createNativeStackNavigator()
 
@@ -98,6 +99,14 @@ export default function App() {
             <Stack.Screen
               name="KeywordSearch"
               component={KeywordSearchScreen}
+              options={{
+                headerShown: false,
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="TempEmail"
+              component={TempEmailScreen}
               options={{
                 headerShown: false,
                 gestureEnabled: true,
